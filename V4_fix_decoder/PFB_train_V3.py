@@ -1,31 +1,32 @@
-# -*- coding:utf-8 -*-
-#%%
+# -*- coding: utf-8 -*-
 from modified_deeplab_V3 import *
 from PFB_measurement import Measurement
 from random import shuffle, random
 
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import easydict
 import os
- 
+
+
 FLAGS = easydict.EasyDict({"img_size": 512,
 
-                           "train_txt_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/train.txt",
+                           "train_txt_path": "/content/train.txt",
 
-                           "val_txt_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/val.txt",
+                           "val_txt_path": "/content/val.txt",
 
-                           "test_txt_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/datasets_IJRR2017/test.txt",
+                           "test_txt_path": "/content/test.txt",
                            
-                           "label_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/datasets_IJRR2017/raw_aug_gray_mask/",
+                           "label_path": "/content/raw_aug_gray_mask/",
                            
-                           "image_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/datasets_IJRR2017/raw_aug_rgb_img/",
+                           "image_path": "/content/raw_aug_rgb_img/",
                            
-                           "pre_checkpoint": True,
+                           "pre_checkpoint": False,
                            
-                           "pre_checkpoint_path": "C:/Users/Yuhwan/Downloads/36/36",
+                           "pre_checkpoint_path": "/content/drive/MyDrive/4th_paper/Segmentation/V4/36/36",
                            
-                           "lr": 0.001,
+                           "lr": 0.0001,
 
                            "min_lr": 1e-7,
                            
@@ -37,26 +38,20 @@ FLAGS = easydict.EasyDict({"img_size": 512,
 
                            "batch_size": 4,
 
-                           "sample_images": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/V3/BoniRob/sample_images",
+                           "sample_images": "/content/drive/MyDrive/4th_paper/Segmentation/V4/BoniRob/sample_images",
 
-                           "save_checkpoint": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/V3/BoniRob/checkpoint",
+                           "save_checkpoint": "/content/drive/MyDrive/4th_paper/Segmentation/V4/BoniRob/checkpoint",
 
-                           "save_print": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/V3/BoniRob/train_out.txt",
+                           "save_print": "/content/drive/MyDrive/4th_paper/Segmentation/V4/BoniRob/train_out.txt",
 
-                           "test_images": "D:/[1]DB/[5]4th_paper_DB/crop_weed/V3_5th_paper/BoniRob/test_images",
+                           "test_images": "D:/[1]DB/[5]4th_paper_DB/crop_weed/related_work/SegNet/BoniRob/test_images",
 
-                           "train": False})
+                           "train": True})
 
-# warmup_epoch = 40
-#lr_scheduler = tf.keras.optimizers.schedules.CosineDecayRestarts(
+# lr_scheduler = tf.keras.optimizers.schedules.CosineDecayRestarts(
 #     initial_learning_rate = FLAGS.lr,
 #     first_decay_steps = 56,
-#)
-# lr_schedule = LRSchedule(0.005, warmup_epoch,
-#                          steps_per_epoch = 56,
-#                          decay_fn = lr_scheduler,
-#                          continue_epoch = 0)
-
+# )
 optim = tf.keras.optimizers.Adam(FLAGS.lr, beta_1=0.5)
 optim2 = tf.keras.optimizers.Adam(0.0001, beta_1=0.5)
 color_map = np.array([[255, 0, 0], [0, 0, 255], [0,0,0]], dtype=np.uint8)
@@ -367,7 +362,9 @@ def main():
 
         if ckpt_manager.latest_checkpoint:
             ckpt.restore(ckpt_manager.latest_checkpoint)
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print("Restored!!")
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     y_b = model.get_layer('activation_9').output
     y_b = tf.keras.layers.Conv2D(filters=48, kernel_size=1, padding='same',
@@ -389,6 +386,7 @@ def main():
 
     y = tf.keras.layers.Conv2D(2, (1, 1), name='output_layer2')(y)
     y = tf.keras.layers.GlobalAveragePooling2D()(y)
+    y = tf.nn.sigmoid(y)
     y = tf.reshape(y, [-1, 1, 1, 2])
     h = y * model.output
 
@@ -400,6 +398,7 @@ def main():
     final_model.get_layer("decoder_conv2d_4").set_weights(model.get_layer("decoder_conv2d_2").get_weights())
     final_model.get_layer("bn_decoder_4").set_weights(model.get_layer("bn_decoder_2").get_weights())
     final_model.summary()
+    model = final_model
 
     for layer in model.layers:
         if isinstance(layer, tf.keras.layers.BatchNormalization):
@@ -410,13 +409,13 @@ def main():
 
     model.summary()
 
-    if FLAGS.pre_checkpoint:
-        ckpt = tf.train.Checkpoint(model=model, optim=optim)
-        ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
+    # if FLAGS.pre_checkpoint:
+    #     ckpt = tf.train.Checkpoint(model=model, optim=optim)
+    #     ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
 
-        if ckpt_manager.latest_checkpoint:
-            ckpt.restore(ckpt_manager.latest_checkpoint)
-            print("Restored!!")
+    #     if ckpt_manager.latest_checkpoint:
+    #         ckpt.restore(ckpt_manager.latest_checkpoint)
+    #         print("Restored!!")
     
     if FLAGS.train:
         count = 0
@@ -605,7 +604,7 @@ def main():
                                         label=batch_label, 
                                         shape=[FLAGS.img_size*FLAGS.img_size, ], 
                                         total_classes=FLAGS.total_classes).MIOU()
-                    f1_score_, recall_ = Measurement(predict=predict_temp,
+                    f1_score_, recall_, _, _, _, _ = Measurement(predict=predict_temp,
                                             label=batch_label,
                                             shape=[FLAGS.img_size*FLAGS.img_size, ],
                                             total_classes=FLAGS.total_classes).F1_score_and_recall()
@@ -682,7 +681,7 @@ def main():
                                         label=batch_label, 
                                         shape=[FLAGS.img_size*FLAGS.img_size, ], 
                                         total_classes=FLAGS.total_classes).MIOU()
-                    f1_score_, recall_ = Measurement(predict=predict_temp,
+                    f1_score_, recall_, _, _, _, _ = Measurement(predict=predict_temp,
                                             label=batch_label,
                                             shape=[FLAGS.img_size*FLAGS.img_size, ],
                                             total_classes=FLAGS.total_classes).F1_score_and_recall()
@@ -754,7 +753,7 @@ def main():
                                         label=batch_label, 
                                         shape=[FLAGS.img_size*FLAGS.img_size, ], 
                                         total_classes=FLAGS.total_classes).MIOU()
-                    f1_score_, recall_ = Measurement(predict=predict_temp,
+                    f1_score_, recall_, _, _, _, _ = Measurement(predict=predict_temp,
                                             label=batch_label,
                                             shape=[FLAGS.img_size*FLAGS.img_size, ],
                                             total_classes=FLAGS.total_classes).F1_score_and_recall()
@@ -938,4 +937,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-# %%

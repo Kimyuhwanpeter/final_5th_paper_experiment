@@ -11,8 +11,6 @@
 * 기존 모델들에 ***new loss***로 ***ablation*** 진행
 <br/>
 
-![image](https://user-images.githubusercontent.com/31001511/145188982-c74cb6c7-ab9a-4ab1-b6e4-dc599af61f47.png)
+![image](https://user-images.githubusercontent.com/31001511/145332663-e2134d3d-6933-4cb7-8523-f98ed5685b27.png)
 <br/>
-
-![image](https://user-images.githubusercontent.com/31001511/145189076-4e8b142e-0e3d-42da-8b66-3db27cdc20b0.png)
 

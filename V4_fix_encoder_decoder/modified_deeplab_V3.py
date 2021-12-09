@@ -107,7 +107,7 @@ def DeepLabV3Plus(img_height, img_width, nclasses=66):
         we assume that `y_pred` encodes a probability distribution.
     '''     
     model = Model(inputs=base_model.input, outputs=[x, x_a], name='DeepLabV3_Plus')
-    model.load_weights("C:/Users/Yuhwan/Downloads/last_epoch.h5")
+    model.load_weights("/content/drive/MyDrive/4th_paper/Segmentation/fix_encoder_decoder/last_epoch.h5")
 
     model.summary()
     print('*** Output_Shape => {model.output_shape} ***')

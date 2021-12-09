@@ -356,16 +356,7 @@ def main():
     out = model.get_layer("activation_decoder_2_upsample").output
     out = tf.keras.layers.Conv2D(2, (1,1), name="output_layer_1")(out)
     model = tf.keras.Model(inputs=model.input, outputs=out)
-    if FLAGS.pre_checkpoint:
-        ckpt = tf.train.Checkpoint(model=model, optim=optim)
-        ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
-
-        if ckpt_manager.latest_checkpoint:
-            ckpt.restore(ckpt_manager.latest_checkpoint)
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("Restored!!")
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
+    
     y_b = model.get_layer('activation_9').output
     y_b = tf.keras.layers.Conv2D(filters=48, kernel_size=1, padding='same',
                  kernel_initializer='he_normal', name='low_level_projection_2', use_bias=False)(y_b)
@@ -409,13 +400,13 @@ def main():
 
     model.summary()
 
-    # if FLAGS.pre_checkpoint:
-    #     ckpt = tf.train.Checkpoint(model=model, optim=optim)
-    #     ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
+    if FLAGS.pre_checkpoint:
+         ckpt = tf.train.Checkpoint(model=model, optim=optim)
+         ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
 
-    #     if ckpt_manager.latest_checkpoint:
-    #         ckpt.restore(ckpt_manager.latest_checkpoint)
-    #         print("Restored!!")
+         if ckpt_manager.latest_checkpoint:
+             ckpt.restore(ckpt_manager.latest_checkpoint)
+             print("Restored!!")
     
     if FLAGS.train:
         count = 0

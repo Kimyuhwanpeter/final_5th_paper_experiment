@@ -9,22 +9,24 @@ def MaxPooling(h):
 
     return val, indx, h.get_shape().as_list()
 
-def UpSample2D(pool, indx, batch_size, output_shape):
+def UpSample2D(pool, indx, output_shape):
 
-    pool_ = tf.reshape(pool, [-1])
-    batch_range = tf.reshape(tf.range(batch_size, dtype=indx.dtype), [tf.shape(pool)[0], 1, 1, 1])
-    b = tf.ones_like(indx) * batch_range
-    b = tf.reshape(b, [-1, 1])
-    indx_ = tf.reshape(indx, [-1, 1])
-    indx_ = tf.concat([b, indx_], 1)
-    ret = tf.scatter_nd(indx_, pool_, shape=[batch_size, output_shape[1] * output_shape[2] * output_shape[3]])
+    #pool_ = tf.reshape(pool, [-1])
+    pool_ = pool
+    #batch_range = tf.reshape(tf.range(batch_size, dtype=indx.dtype), [tf.shape(pool)[0], 1, 1, 1])
+    b = tf.expand_dims(tf.ones_like(indx), -1)
+    #b = tf.reshape(b, [-1, 1])
+    #indx_ = tf.reshape(indx, [-1, 1])
+    indx_ = tf.expand_dims(indx, -1)
+    indx_ = tf.concat([b, indx_], -1)
+    ret = tf.scatter_nd(indx_, pool_, shape=[tf.shape(pool)[0], output_shape[1] * output_shape[2] * output_shape[3]])
     ret = tf.reshape(ret, [tf.shape(pool)[0], output_shape[1], output_shape[2], output_shape[3]])
 
     return ret
 
-def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
+def SegNet_model(input_shape=(512, 512, 3), classes=3):
 
-    h = inputs = tf.keras.Input(input_shape, batch_size=batch_size)    # per_image_standliazation ?? ???Ѿ???
+    h = inputs = tf.keras.Input(input_shape)    # per_image_standliazation ?? ???Ѿ???
     
     backbone = Backbones.get_backbone(
         name="vgg16",
@@ -84,7 +86,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
 
     ######################################################################################################
 
-    h = UpSample2D(pool5, poo1_indx5, batch_size, shape_5)
+    h = UpSample2D(pool5, poo1_indx5, shape_5)
     h = tf.keras.layers.Conv2D(filters=512, kernel_size=3, padding="same", name="conv14")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -95,7 +97,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx4, batch_size, shape_4)
+    h = UpSample2D(h, poo1_indx4, shape_4)
     h = tf.keras.layers.Conv2D(filters=512, kernel_size=3, padding="same", name="conv17")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -106,7 +108,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx3, batch_size, shape_3)
+    h = UpSample2D(h, poo1_indx3, shape_3)
     h = tf.keras.layers.Conv2D(filters=256, kernel_size=3, padding="same", name="conv20")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -117,7 +119,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx2, batch_size, shape_2)
+    h = UpSample2D(h, poo1_indx2, shape_2)
     h = tf.keras.layers.Conv2D(filters=128, kernel_size=3, padding="same", name="conv23")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -125,7 +127,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx1, batch_size, shape_1)
+    h = UpSample2D(h, poo1_indx1, shape_1)
     h = tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding="same", name="conv25")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)

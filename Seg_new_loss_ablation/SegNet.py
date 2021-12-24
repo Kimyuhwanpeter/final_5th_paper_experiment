@@ -13,20 +13,41 @@ def MaxPooling(h):
 
     return val, indx, h.get_shape().as_list()
 
-def UpSample2D(pool, indx, output_shape):
+class MaxUnpooling2D(tf.keras.layers.Layer):
+    def __init__(self, size=(2, 2), **kwargs):
+        super(MaxUnpooling2D, self).__init__(**kwargs)
+        self.size = size
 
-    #pool_ = tf.reshape(pool, [-1])
-    pool_ = pool
-    #batch_range = tf.reshape(tf.range(batch_size, dtype=indx.dtype), [tf.shape(pool)[0], 1, 1, 1])
-    b = tf.expand_dims(tf.ones_like(indx), -1)
-    #b = tf.reshape(b, [-1, 1])
-    #indx_ = tf.reshape(indx, [-1, 1])
-    indx_ = tf.expand_dims(indx, -1)
-    indx_ = tf.concat([b, indx_], -1)
-    ret = tf.scatter_nd(indx_, pool_, shape=[tf.shape(pool)[0], output_shape[1] * output_shape[2] * output_shape[3]])
-    ret = tf.reshape(ret, [tf.shape(pool)[0], output_shape[1], output_shape[2], output_shape[3]])
+    def call(self, updates_, mask_, output_shape=None):
+        updates, mask = updates_, mask_
+        #pool_ = tf.reshape(pool, [-1])
+        pool_ = updates
+        #batch_range = tf.reshape(tf.range(batch_size, dtype=indx.dtype), [tf.shape(pool)[0], 1, 1, 1])
+        b = tf.expand_dims(tf.ones_like(mask), -1)
+        #b = tf.reshape(b, [-1, 1])
+        #indx_ = tf.reshape(indx, [-1, 1])
+        indx_ = tf.expand_dims(mask, -1)
+        indx_ = tf.concat([b, indx_], -1)
+        ret = tf.scatter_nd(indx_, pool_, shape=[tf.shape(updates)[0], output_shape[1] * output_shape[2] * output_shape[3]])
+        ret = tf.reshape(ret, [tf.shape(updates)[0], output_shape[1], output_shape[2], output_shape[3]])
 
-    return ret
+        return ret
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'size': self.size
+        })
+        return config
+
+    def compute_output_shape(self, input_shape):
+        mask_shape = input_shape[1]
+        return (
+                mask_shape[0],
+                mask_shape[1]*self.size[0],
+                mask_shape[2]*self.size[1],
+                mask_shape[3]
+                )
 
 def SegNet_model(input_shape=(512, 512, 3), classes=3):
 
@@ -90,7 +111,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3):
 
     ######################################################################################################
 
-    h = UpSample2D(pool5, poo1_indx5, shape_5)
+    h = MaxUnpooling2D()(pool5, poo1_indx5, shape_5)
     h = tf.keras.layers.Conv2D(filters=512, kernel_size=3, padding="same", name="conv14")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -101,7 +122,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx4, shape_4)
+    h = MaxUnpooling2D()(h, poo1_indx4, shape_4)
     h = tf.keras.layers.Conv2D(filters=512, kernel_size=3, padding="same", name="conv17")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -112,7 +133,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx3, shape_3)
+    h = MaxUnpooling2D()(h, poo1_indx3, shape_3)
     h = tf.keras.layers.Conv2D(filters=256, kernel_size=3, padding="same", name="conv20")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -123,7 +144,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx2, shape_2)
+    h = MaxUnpooling2D()(h, poo1_indx2, shape_2)
     h = tf.keras.layers.Conv2D(filters=128, kernel_size=3, padding="same", name="conv23")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
@@ -131,7 +152,7 @@ def SegNet_model(input_shape=(512, 512, 3), classes=3):
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)
 
-    h = UpSample2D(h, poo1_indx1, shape_1)
+    h = MaxUnpooling2D()(h, poo1_indx1, shape_1)
     h = tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding="same", name="conv25")(h)
     h = tf.keras.layers.BatchNormalization()(h)
     h = tf.keras.layers.ReLU()(h)

@@ -3,7 +3,7 @@
 from modified_deeplab_V3 import *
 from PFB_measurement import Measurement
 from random import shuffle, random
-
+ 
 import tensorflow_addons as tfa
 import matplotlib.pyplot as plt
 import numpy as np

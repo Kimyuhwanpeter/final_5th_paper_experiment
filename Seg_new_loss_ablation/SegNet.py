@@ -5,7 +5,11 @@ import tensorflow as tf
 
 def MaxPooling(h):
 
-    val, indx = tf.nn.max_pool_with_argmax(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+    _, indx = tf.nn.max_pool_with_argmax(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+    indx = tf.stop_gradient(indx)
+
+    val = tf.nn.max_pool(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+
 
     return val, indx, h.get_shape().as_list()
 

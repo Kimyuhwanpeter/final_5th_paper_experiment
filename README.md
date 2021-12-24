@@ -13,7 +13,5 @@
 
 * **Unet을 fix하자 (ablation에서 Unet과 내가 설계한 loss의 성능이 너무 좋음)**
 <br/>
-					
-![image](https://user-images.githubusercontent.com/31001511/145676805-df91d1a5-0764-47d2-858e-c818dfda63d6.png)
-<br/>
+
 

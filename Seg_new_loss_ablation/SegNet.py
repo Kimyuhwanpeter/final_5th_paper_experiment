@@ -116,7 +116,7 @@ def UpSample2D(pool, indx, output_shape):
 
 def SegNet_model(input_shape=(512, 512, 3), classes=3, batch_size=4):
 
-    h = inputs = tf.keras.Input(input_shape)    # per_image_standliazation ?? ???Ѿ???
+    h = inputs = tf.keras.Input(input_shape, batch_size=batch_size)    # per_image_standliazation ?? ???Ѿ???
     
     backbone = Backbones.get_backbone(
         name="vgg16",

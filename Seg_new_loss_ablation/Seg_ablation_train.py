@@ -34,7 +34,7 @@ FLAGS = easydict.EasyDict({"img_size": 512,
 
                            "ignore_label": 0,
 
-                           "batch_size": 2,
+                           "batch_size": 4,
 
                            "sample_images": "/yuhwan/yuhwan/checkpoint/Segmenation/related_UNET/BoniRob/sample_images",
 
@@ -236,7 +236,7 @@ def cal_loss2(model, images, labels, objectiness, class_im_plain, ignore_label):
     return loss
 
 
-@tf.function
+#@tf.function
 def cal_loss(model, images, labels, objectiness, class_im_plain, imbal_plain, ob_imbal_labels_buf, ignore_label):
 
     with tf.GradientTape() as tape:
@@ -358,7 +358,7 @@ def cal_loss(model, images, labels, objectiness, class_im_plain, imbal_plain, ob
 # yilog(h(xi;??))+(1?yi)log(1?h(xi;??))
 def main():
     tf.keras.backend.clear_session()
-    model = SegNet_model(input_shape=(FLAGS.img_size, FLAGS.img_size, 3), classes=2)
+    model = SegNet_model(input_shape=(FLAGS.img_size, FLAGS.img_size, 3), classes=2, batch_size=FLAGS.batch_size)
 
     for layer in model.layers:
         if isinstance(layer, tf.keras.layers.BatchNormalization):
@@ -368,7 +368,7 @@ def main():
         #    layer.kernel_regularizer = tf.keras.regularizers.l2(0.0005)
 
     model.summary()
-    
+
     if FLAGS.pre_checkpoint:
         ckpt = tf.train.Checkpoint(model=model, optim=optim)
         ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
@@ -611,12 +611,14 @@ def main():
             sensitivity = 0.
             crop_iou = 0.
             weed_iou = 0.
+            model_ = SegNet_model(input_shape=(FLAGS.img_size, FLAGS.img_size, 3), classes=2, batch_size=1)
+            model_.set_weights(model.get_weights())
             for i in range(len(val_img_dataset)):
                 batch_images, batch_labels = next(val_iter)
                 batch_labels = tf.squeeze(batch_labels, -1)
                 for j in range(1):
                     batch_image = tf.expand_dims(batch_images[j], 0)
-                    logits = run_model(model, batch_image, False) # type?? batch label?? ???? type???? ?????־?????
+                    logits = run_model(model_, batch_image, False) # type?? batch label?? ???? type???? ?????־?????
                     object_predict = tf.nn.sigmoid(logits[0, :, :, 1])
                     predict = tf.nn.sigmoid(logits[0, :, :, 0:1])
                     predict = np.where(predict.numpy() >= 0.5, 1, 0)
@@ -683,12 +685,14 @@ def main():
             sensitivity = 0.
             crop_iou = 0.
             weed_iou = 0.
+            model_ = SegNet_model(input_shape=(FLAGS.img_size, FLAGS.img_size, 3), classes=2, batch_size=1)
+            model_.set_weights(model.get_weights())
             for i in range(len(test_img_dataset)):
                 batch_images, batch_labels = next(test_iter)
                 batch_labels = tf.squeeze(batch_labels, -1)
                 for j in range(1):
                     batch_image = tf.expand_dims(batch_images[j], 0)
-                    logits = run_model(model, batch_image, False) # type?? batch label?? ???? type???? ?????־?????
+                    logits = run_model(model_, batch_image, False) # type?? batch label?? ???? type???? ?????־?????
                     object_predict = tf.nn.sigmoid(logits[0, :, :, 1])
                     predict = tf.nn.sigmoid(logits[0, :, :, 0:1])
                     predict = np.where(predict.numpy() >= 0.5, 1, 0)

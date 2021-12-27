@@ -10,17 +10,17 @@ import os
 
 FLAGS = easydict.EasyDict({"img_size": 512,
 
-                           "train_txt_path": "/yuhwan/yuhwan/Dataset/Segmentation/Crop_weed/datasets_IJRR2017/train.txt",
+                           "train_txt_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/train.txt",
 
-                           "val_txt_path": "/yuhwan/yuhwan/Dataset/Segmentation/Crop_weed/datasets_IJRR2017/val.txt",
+                           "val_txt_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/val.txt",
 
-                           "test_txt_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/rice seedling and weed dataset/test.txt",
+                           "test_txt_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/test.txt",
                            
-                           "label_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/rice seedling and weed dataset/aug_label_mask/",
+                           "label_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/raw_aug_gray_mask/",
                            
-                           "image_path": "D:/[1]DB/[5]4th_paper_DB/crop_weed/rice seedling and weed dataset/aug_image/",
+                           "image_path": "/yuwhan/yuwhan/Dataset/Segmentation/BoniRob/raw_aug_rgb_img/",
                            
-                           "pre_checkpoint": True,
+                           "pre_checkpoint": False,
                            
                            "pre_checkpoint_path": "C:/Users/Yuhwan/Downloads/136/136",
                            
@@ -36,15 +36,15 @@ FLAGS = easydict.EasyDict({"img_size": 512,
 
                            "batch_size": 4,
 
-                           "sample_images": "/yuhwan/yuhwan/checkpoint/Segmenation/related_UNET/BoniRob/sample_images",
+                           "sample_images": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/SegNet_5thLoss_ablation/BoniRob/sample_images",
 
-                           "save_checkpoint": "/yuhwan/yuhwan/checkpoint/Segmenation/related_UNET/BoniRob/checkpoint",
+                           "save_checkpoint": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/SegNet_5thLoss_ablation/BoniRob/checkpoint",
 
-                           "save_print": "/yuhwan/yuhwan/checkpoint/Segmenation/related_UNET/BoniRob/train_out.txt",
+                           "save_print": "/yuwhan/Edisk/yuwhan/Edisk/Segmentation/SegNet_5thLoss_ablation/BoniRob/train_out.txt",
 
                            "test_images": "D:/[1]DB/[5]4th_paper_DB/crop_weed/related_work/SegNet/rice_seedling_weed/test_images",
 
-                           "train": False})
+                           "train": True})
 
 
 # lr_scheduler = tf.keras.optimizers.schedules.CosineDecayRestarts(
@@ -236,7 +236,7 @@ def cal_loss2(model, images, labels, objectiness, class_im_plain, ignore_label):
     return loss
 
 
-#@tf.function
+@tf.function
 def cal_loss(model, images, labels, objectiness, class_im_plain, imbal_plain, ob_imbal_labels_buf, ignore_label):
 
     with tf.GradientTape() as tape:
@@ -368,7 +368,7 @@ def main():
         #    layer.kernel_regularizer = tf.keras.regularizers.l2(0.0005)
 
     model.summary()
-
+    
     if FLAGS.pre_checkpoint:
         ckpt = tf.train.Checkpoint(model=model, optim=optim)
         ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.pre_checkpoint_path, 5)
@@ -490,7 +490,7 @@ def main():
                     print("Epoch: {} [{}/{}] loss = {}".format(epoch, step+1, tr_idx, loss))
 
                 if count % 100 == 0:
-
+                
                     logits = run_model(model, batch_images, False)
                     object_images = tf.nn.sigmoid(logits[:, :, :, 1])
                     images = tf.nn.sigmoid(logits[:, :, :, 0:1])

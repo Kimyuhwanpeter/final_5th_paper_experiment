@@ -46,96 +46,32 @@ Konovalov, D.A., Hillcoat, S., Williams, G. , Birtles, R. A., Gardiner, N., and 
     pool3 = base_model.layers[-9].output
     pool4 = base_model.layers[-5].output
     pool5 = base_model.layers[-1].output
+    c6 = tf.keras.layers.Conv2D( 4096 , ( 7 , 7 ) , activation='relu' , padding='same', name="conv6")(pool5)
+    c7 = tf.keras.layers.Conv2D( 4096 , ( 1 , 1 ) , activation='relu' , padding='same', name="conv7")(c6)
 
-    # NOTE no change from 16s
-    # https://github.com/shelhamer/fcn.berkeleyvision.org/blob/master/voc-fcn8s/net.py
-    # n.fc6, n.relu6 = conv_relu(n.pool5, 4096, ks=7, pad=0)
-    relu6 = tf.keras.layers.Conv2D(num_conv_filters, 7,
-               activation='relu',
-               kernel_regularizer=kr(wd),
-               kernel_initializer=ki,
-               use_bias=use_bias,
-               padding='same', name='fc6_relu6')(pool5)
-    # n.drop6 = L.Dropout(n.relu6, dropout_ratio=0.5, in_place=True)
-    drop6 = tf.keras.layers.Dropout(0.5)(relu6)
+    # FCN-32 output
+    fcn32_o = tf.keras.layers.Conv2DTranspose(num_classes, kernel_size=(32,32), strides=(32, 32), use_bias=False)(c7)
+    o = tf.keras.layers.Conv2DTranspose(num_classes, kernel_size=(4,4), strides=(2,2), use_bias=False)(c7) # (16, 16, n)
+    o = tf.keras.layers.Cropping2D(cropping=(1,1))(o) # (14, 14, n)
 
-    # n.fc7, n.relu7 = conv_relu(n.drop6, 4096, ks=1, pad=0)
-    relu7 = tf.keras.layers.Conv2D(num_conv_filters, 1,
-               activation='relu',
-               kernel_regularizer=kr(wd),
-               kernel_initializer=ki,
-               use_bias=use_bias,
-               name='fc7_relu7')(drop6)
-    # n.drop7 = L.Dropout(n.relu7, dropout_ratio=0.5, in_place=True)
-    drop7 = tf.keras.layers.Dropout(0.5)(relu7)
+    o2 = pool4 # (14, 14, 512)
+    o2 = tf.keras.layers.Conv2D(num_classes, (1,1), activation='relu', padding='same')(o2) # (14, 14, n)
+    o = tf.keras.layers.Add()([o, o2]) # (14, 14, n)
 
-    # n.score_fr = L.Convolution(n.drop7, num_output=21, kernel_size=1, pad=0,
-    #     param=[dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)])
-    score_fr = tf.keras.layers.Conv2D(num_classes, 1,
-                       kernel_regularizer=kr(wd),
-                       use_bias=use_bias,
-                       name='conv_fc3')(drop7)
+    # FCN-16 output
+    fcn16_o = tf.keras.layers.Conv2DTranspose(num_classes, kernel_size=(16,16), strides=(16,16), use_bias=False)(o)
+    
+    o = tf.keras.layers.Conv2DTranspose(num_classes, kernel_size=(4,4), strides=(2,2), use_bias=False)(o) # (30, 30, n)
+    o = tf.keras.layers.Cropping2D(cropping=(1,1))(o) # (28, 28, n)
+    
+    o2 = pool3 # (28, 28, 256)
+    o2 = tf.keras.layers.Conv2D(num_classes, (1,1), activation='relu', padding='same')(o2) # (28, 28, n)
+    
+    o = tf.keras.layers.Add()([o, o2]) # (28, 28, n)
+    
+    o = tf.keras.layers.Conv2DTranspose(num_classes, kernel_size=(8,8), strides=(8,8), use_bias=False)(o) # (224, 224, n)
+    # append a softmax to get the class probabilities
 
-    # UPSAMPLE 16
-    # https://github.com/shelhamer/fcn.berkeleyvision.org/blob/master/voc-fcn16s/net.py
-    #  n.upscore2 = L.Deconvolution(n.score_fr,
-    #     convolution_param=dict(num_output=21, kernel_size=4, stride=2, bias_term=False),
-    #     param=[dict(lr_mult=0)])
-    # NOTE no change from 16s
-    upscore2 = tf.keras.layers.Conv2DTranspose(num_classes, 4,
-                               strides=(2, 2),
-                               padding='same',
-                               kernel_regularizer=kr(wd),
-                               kernel_initializer=ki,
-                               use_bias=False,
-                               name='upscore2')(score_fr)
-
-    #  n.score_pool4 = L.Convolution(n.pool4, num_output=21, kernel_size=1, pad=0,
-    #      param=[dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)])
-    # NOTE no change from 16s
-    score_pool4 = tf.keras.layers.Conv2D(num_classes, 1,
-                         kernel_regularizer=kr(wd),
-                         use_bias=use_bias)(pool4)
-
-    # n.score_pool4c = crop(n.score_pool4, n.upscore2)
-    # n.fuse_pool4 = L.Eltwise(n.upscore2, n.score_pool4c, operation=P.Eltwise.SUM)
-    # NOTE no change from 16s
-    fuse_pool4 = tf.keras.layers.Add()([upscore2, score_pool4])
-
-    # n.upscore_pool4 = L.Deconvolution(n.fuse_pool4,
-    #     convolution_param=dict(num_output=21, kernel_size=4, stride=2, bias_term=False),
-    #     param=[dict(lr_mult=0)])
-    # NEW in 8s
-    upscore_pool4 = tf.keras.layers.Conv2DTranspose(num_classes, 4,
-                                    strides=(2, 2),
-                                    padding='same',
-                                    kernel_regularizer=kr(wd),
-                                    kernel_initializer=ki,
-                                    use_bias=False,
-                                    name='upscore_pool4')(fuse_pool4)
-
-    # n.score_pool3 = L.Convolution(n.pool3, num_output=21, kernel_size=1, pad=0,
-    #     param=[dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)])
-    # n.score_pool3c = crop(n.score_pool3, n.upscore_pool4)
-    # n.fuse_pool3 = L.Eltwise(n.upscore_pool4, n.score_pool3c, operation=P.Eltwise.SUM)
-    # n.upscore8 = L.Deconvolution(n.fuse_pool3,
-    #     convolution_param=dict(num_output=21, kernel_size=16, stride=8, bias_term=False),
-    # NEW in 8s
-    score_pool3 = tf.keras.layers.Conv2D(num_classes, 1, kernel_regularizer=kr(wd), use_bias=use_bias)(pool3)
-    fuse_pool3 = tf.keras.layers.Add()([upscore_pool4, score_pool3])
-    upscore8 = tf.keras.layers.Conv2DTranspose(num_classes, 16,
-                               strides=(8, 8),
-                               padding='same',
-                               kernel_regularizer=kr(wd),
-                               kernel_initializer=ki,
-                               use_bias=False,
-                               name='upscore8')(fuse_pool3)
-
-    # n.score = crop(n.upscore8, n.data)
-    # n.loss = L.SoftmaxWithLoss(n.score, n.label, loss_param=dict(normalize=False, ignore_label=255))
-    #score = tf.keras.layers.Activation(last_activation)(upscore8)
-
-    #model = Model(inputs=[in1], outputs=[score])  # OLD
-    model = tf.keras.Model(in1, upscore8)
+    model = tf.keras.Model(in1, o)
 
     return model

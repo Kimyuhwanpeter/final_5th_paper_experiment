@@ -113,7 +113,7 @@ Konovalov, D.A., Hillcoat, S., Williams, G. , Birtles, R. A., Gardiner, N., and 
     # NEW in 8s
     score_pool3 = tf.keras.layers.Conv2D(num_classes, 1, use_bias=use_bias)(pool3)
     fuse_pool3 = tf.keras.layers.Add()([upscore_pool4, score_pool3])
-    upscore8 = tf.keras.layers.Conv2DTranspose(num_classes, 8,
+    upscore8 = tf.keras.layers.Conv2DTranspose(num_classes, 16,
                                strides=(8, 8),
                                padding='same',
                                use_bias=False,

@@ -17,6 +17,10 @@
 * Proposed method를 제외한 모든것은 **ablation** (어느정도 진행 완료, 마지막으로 DeeplabV3만 5thNewLoss로 ablation 하면될듯??)
 <br/>
 
+* **4번 째 논문은 다 썼기 떄문에 교수님께 confirm 받으면됨**
+
+* **5번 째 논문은 현재 Section 2 쓰는중**
+
 
 * 비교실험 결과
 ![image](https://user-images.githubusercontent.com/31001511/147740207-1f01ce54-8b11-41fb-98a3-2da4cb34c8b9.png)

@@ -14,6 +14,7 @@
 * **Unet을 fix하자 (ablation에서 Unet과 내가 설계한 loss의 성능이 너무 좋음)**
 <br/>
 
-* Proposed method를 제외한 모든것은 **ablation**
+* Proposed method를 제외한 모든것은 **ablation** (어느정도 진행 완료, 마지막으로 DeeplabV3만 5thNewLoss로 ablation 하면될듯??)
+<br/>
 
 

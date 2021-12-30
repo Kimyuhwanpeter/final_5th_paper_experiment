@@ -1,5 +1,5 @@
 # final_5th_paper_experiment
-* ~~지금으로서는 ***fix_decoder with new loss*** 가 좋음 
+* ~~지금으로서는 ***fix_decoder with new loss*** 가 좋음 ~~
 <br/>
 
 * ***fix_encoder***는 ***ablation***으로 **완료** (DeeplabV3_+)

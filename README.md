@@ -18,3 +18,16 @@
 <br/>
 
 
+* 비교실험 결과
+![image](https://user-images.githubusercontent.com/31001511/147740207-1f01ce54-8b11-41fb-98a3-2da4cb34c8b9.png)
+<br/>
+
+* Ablation 1
+![image](https://user-images.githubusercontent.com/31001511/147740255-fe4802fd-32af-4574-b77c-16428172f7e7.png)
+<br/>
+
+* Ablation 2
+![image](https://user-images.githubusercontent.com/31001511/147740289-0893d8f2-ed13-458f-9060-ba5727d2d031.png)
+
+* Ablation 2 vs related study
+![image](https://user-images.githubusercontent.com/31001511/147740354-936cece1-bff5-4d67-bb4f-4f176ed6ddef.png)

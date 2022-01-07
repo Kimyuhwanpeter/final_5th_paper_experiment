@@ -37,3 +37,7 @@
 
 * Ablation 2 vs related study
 ![image](https://user-images.githubusercontent.com/31001511/147740354-936cece1-bff5-4d67-bb4f-4f176ed6ddef.png)
+
+* Ablation 3 (change decoder)
+![image](https://user-images.githubusercontent.com/31001511/148506611-c5db5d8f-08e0-4034-b208-63a14d9b34c9.png)
+

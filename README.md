@@ -23,6 +23,8 @@
 
 * Changing decoder in proposed method (ablatation complete)
 
+* 현재는 5번쨰 논문 쓰는중 (추가 실험에 대해서는 추 후 예정)
+
 
 * 비교실험 결과
 ![image](https://user-images.githubusercontent.com/31001511/147740207-1f01ce54-8b11-41fb-98a3-2da4cb34c8b9.png)

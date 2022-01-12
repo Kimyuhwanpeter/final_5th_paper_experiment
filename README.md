@@ -23,7 +23,7 @@
 
 * Changing decoder in proposed method (ablatation complete)
 
-* 현재는 5번쨰 논문 쓰는중 (추가 실험에 대해서는 추 후 예정)
+* 현재는 5번쨰 논문 쓰는중 (attention 위치를 바꾼 ablation도 진행하자)
 
 
 * 비교실험 결과

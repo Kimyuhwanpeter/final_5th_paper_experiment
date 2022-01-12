@@ -1,0 +1,219 @@
+# -*- coding:utf-8 -*-
+import tensorflow as tf
+import numpy as np
+import os
+
+# ?ȳ??ϼ???!!  ???????? ?̾ ???? ?? ?? ?о????ϴ?.  mIoU ?????ÿ?, true label?????? ???????? ?ʰ? predict
+# label?????? ?????ϴ? label?? ?????? iou?? 0???? ?ΰ? ?????? ???ֳ????
+# ?ȳ??ϼ???.?? ?½??ϴ?.  ?????? ???????? ?????? 0?? ?Ǵ? ???? ?Դϴ?.  true label???? ?????? predict???? ?????Ѵٴ? ??
+# ??ü?? ?????? ???۰??̴? 0?? ?????ؾ? ?ϴ? ?????? ?????մϴ?.
+
+# ?? ???? ??????????, ????
+# ??!!!  predict?? ?̹????? void?κ??? 11?? ??????!  miou?? ???? ??, voidŬ???? ?󵵼??? ?????ϰ? ?????ϸ? ????
+# ???????  ??????!!!!!  ???ݻ???????!!!!!!!!!!!!!
+# ?ֳĸ?!  ?????? predict?? label ??ġ?? ???? ???? ?????ϰ? ?ִٸ? confusion metrice ?Ҷ? ?߾Ӽ??и?????!
+# ?׷??⿡ cm?? ???? ?? ?밢?????? ?????? ?? ?? ?ڿ??ִ? void?????? ?????ϸ? ??!  ??Ű!!  ???? ?ٽ??ѹ???
+# ????õõ???غ?!!!?????? ????!!!!!!!!!!!
+class Measurement:
+    def __init__(self, predict, label, shape, total_classes):
+        self.predict = predict
+        self.label = label
+        self.total_classes = total_classes
+        self.shape = shape
+
+    def MIOU(self):
+
+        self.predict = np.reshape(self.predict, self.shape)
+        self.label = np.reshape(self.label, self.shape)
+
+        predict_count = np.bincount(self.predict, minlength=self.total_classes)
+        label_count = np.bincount(self.label, minlength=self.total_classes)
+         
+        temp = self.total_classes * np.array(self.label, dtype="int") + np.array(self.predict, dtype="int")  # Get category metrics
+    
+        temp_count = np.bincount(temp, minlength=self.total_classes * self.total_classes)
+        cm = np.reshape(temp_count, [self.total_classes, self.total_classes])
+        cm = np.diag(cm)
+    
+        U = label_count + predict_count - cm
+        U = np.delete(U, -1)
+        cm_ = np.delete(cm, -1)
+
+        out = np.zeros((2))
+        miou = np.divide(cm_, U + 1e-7)
+        crop_iou = miou[0]
+        weed_iou = miou[1]
+        miou = np.nanmean(miou)
+        
+
+        if weed_iou == float('NaN'):
+            weed_iou = 0.
+        if crop_iou == float('NaN'):
+            crop_iou = 0.
+
+        return miou, crop_iou, weed_iou
+
+    def F1_score_and_recall(self):  # recall - sensitivity
+
+        # 1?? ???? predict?? label ?????????? (TP, FP)
+        self.predict_positive = np.where(self.predict == 1, 1, 0)
+        self.label_positive = np.where(self.label == 1, 1, 0)
+        self.predict_positive = np.reshape(self.predict_positive, self.shape)
+        self.label_positive = np.reshape(self.label_positive, self.shape)
+
+        TP_func = lambda predict: predict[:] == 1
+        TP_func2 = lambda predict, label: predict[:] == label[:]
+        TP = np.where(TP_func(self.predict_positive) & TP_func2(self.predict_positive, self.label_positive), 1, 0)
+        TP = np.sum(TP, dtype=np.int32)
+
+        FP_func = lambda predict: predict[:] == 1
+        FP_func2 = lambda predict, label: predict[:] != label[:]
+        FP = np.where(FP_func(self.predict_positive) & FP_func2(self.predict_positive, self.label_positive), 1, 0)
+        FP = np.sum(FP, dtype=np.int32)
+
+        # 0?? ???? predict?? label ???????? (TN, FN)
+        self.predict_negative = np.where(self.predict == 0, 0, 1)
+        self.label_negative = np.where(self.label == 0, 0, 1)
+        self.predict_negative = np.reshape(self.predict_negative, self.shape)
+        self.label_negative = np.reshape(self.label_negative, self.shape)
+
+        TN_func = lambda predict: predict[:] == 0
+        TN_func2 = lambda predict, label: predict[:] == label[:]
+        TN = np.where(TN_func(self.predict_negative) & TN_func2(self.predict_negative, self.label_negative), 1, 0)
+        TN = np.sum(TN, dtype=np.int32)
+
+        FN_func = lambda predict: predict[:] == 0
+        FN_func2 = lambda predict, label: predict[:] != label[:]
+        FN = np.where(FN_func(self.predict_negative) & FN_func2(self.predict_negative, self.label_negative), 1, 0)
+        FN = np.sum(FN, dtype=np.int32)
+
+        TP_FP = (TP + FP) + 1e-7
+
+        TP_FN = (TP + FN) + 1e-7
+
+        out = np.zeros((1))
+        Precision = np.divide(TP, TP_FP)
+        Recall = np.divide(TP, TP_FN)
+
+        Pre_Re = (Precision + Recall) + 1e-7
+
+        F1_score = np.divide(2. * (Precision * Recall), Pre_Re)
+
+        return F1_score, Recall, TP, TN, FP, FN
+
+    def TDR(self): # True detection rate
+
+        # 1?? ???? predict?? label ?????????? (TP, FP)
+        self.predict_positive = np.where(self.predict == 1, 1, 0)
+        self.label_positive = np.where(self.label == 1, 1, 0)
+        self.predict_positive = np.reshape(self.predict_positive, self.shape)
+        self.label_positive = np.reshape(self.label_positive, self.shape)
+
+        TP_func = lambda predict: predict[:] == 1
+        TP_func2 = lambda predict, label: predict[:] == label[:]
+        TP = np.where(TP_func(self.predict_positive) & TP_func2(self.predict_positive, self.label_positive), 1, 0)
+        TP = np.sum(TP, dtype=np.int32)
+
+        FP_func = lambda predict: predict[:] == 1
+        FP_func2 = lambda predict, label: predict[:] != label[:]
+        FP = np.where(FP_func(self.predict_positive) & FP_func2(self.predict_positive, self.label_positive), 1, 0)
+        FP = np.sum(FP, dtype=np.int32)
+
+        # 0?? ???? predict?? label ???????? (TN, FN)
+        self.predict_negative = np.where(self.predict == 0, 0, 1)
+        self.label_negative = np.where(self.label == 0, 0, 1)
+        self.predict_negative = np.reshape(self.predict_negative, self.shape)
+        self.label_negative = np.reshape(self.label_negative, self.shape)
+
+        TN_func = lambda predict: predict[:] == 0
+        TN_func2 = lambda predict, label: predict[:] == label[:]
+        TN = np.where(TN_func(self.predict_negative) & TN_func2(self.predict_negative, self.label_negative), 1, 0)
+        TN = np.sum(TN, dtype=np.int32)
+
+        FN_func = lambda predict: predict[:] == 0
+        FN_func2 = lambda predict, label: predict[:] != label[:]
+        FN = np.where(FN_func(self.predict_negative) & FN_func2(self.predict_negative, self.label_negative), 1, 0)
+        FN = np.sum(FN, dtype=np.int32)
+
+        TP_FP = (TP + FP) + 1e-7
+
+        out = np.zeros((1))
+        TDR = np.divide(FP, TP_FP)
+
+        TDR = 1 - TDR
+
+        return TDR
+
+    def show_confusion(self):
+        # TP - Red [255, 0, 0] 10, TN - ?ϴû? [0, 255, 255] 20, FP - ??ȫ?? [255, 0, 255] 30, FN - ???? [255, 255, 0] 40
+
+        self.predict = np.squeeze(self.predict, -1)
+
+        color_map = np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255], [236, 184, 199]])
+        TP_func = lambda func:func[:] == 1
+        output = np.where(TP_func(self.predict) & TP_func(self.label), 10, 0)  # get TP
+
+        TN_func = lambda func:func[:] == 0
+        output = np.where(TN_func(self.predict) & TN_func(self.label), 20, output)  # get TN
+        
+        FP_func = lambda func:func[:] == 1
+        FP_func2 = lambda func:func[:] == 0
+        FP_func3 = lambda func:func[:] == 2
+        output = np.where(FP_func(self.predict) & (FP_func2(self.label)|FP_func3(self.label)), 30, output)  # get FP
+        output = np.where(FP_func3(self.label) & FP_func(self.predict), 30, output)
+        # ?? ?κп? ???? ?? ?߰????־?????!! ??????!1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        FN_func = lambda func:func[:] == 0
+        FN_func2 = lambda func:func[:] == 1
+        FN_func3 = lambda func:func[:] == 2
+        output = np.where(FN_func(self.predict) & (FN_func2(self.label)|FN_func3(self.label)), 40, output)  # get FN
+        output = np.where(FN_func3(self.label) & FN_func(self.predict), 40, output)
+        # ?? ?κп? ???? ?? ?߰????־?????!! ??????!1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        output = np.expand_dims(output, -1)
+        output_3D = np.concatenate([output, output, output], -1)
+        temp_output_3D = output_3D
+        
+        output_3D = np.where(output == np.array([0, 0, 0], dtype=np.uint8), np.array([0, 0, 0], dtype=np.uint8), output_3D).astype(np.uint8)
+        output_3D = np.where(output == np.array([10, 10, 10], dtype=np.uint8), np.array([255, 127, 0], dtype=np.uint8), output_3D).astype(np.uint8)   # TN    - ??Ȳ??
+        output_3D = np.where(output == np.array([20, 20, 20], dtype=np.uint8), np.array([128, 128, 128], dtype=np.uint8), output_3D).astype(np.uint8) # TP    - ȸ??
+        output_3D = np.where(output == np.array([30, 30, 30], dtype=np.uint8), np.array([139, 0, 255], dtype=np.uint8), output_3D).astype(np.uint8) # FN    - ??????
+        output_3D = np.where(output == np.array([40, 40, 40], dtype=np.uint8), np.array([255, 255, 0], dtype=np.uint8), output_3D).astype(np.uint8) # FP    - ??????
+
+
+        return output_3D, temp_output_3D
+
+#import matplotlib.pyplot as plt
+
+#if __name__ == "__main__":
+
+    
+#    path = os.listdir("D:/[1]DB/[5]4th_paper_DB/other/CamVidtwofold_gray/CamVidtwofold_gray/train/labels")
+
+#    b_buf = []
+#    for i in range(len(path)):
+#        img = tf.io.read_file("D:/[1]DB/[5]4th_paper_DB/other/CamVidtwofold_gray/CamVidtwofold_gray/train/labels/"+ path[i])
+#        img = tf.image.decode_png(img, 1)
+#        img = tf.image.resize(img, [513, 513], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+#        img = tf.image.convert_image_dtype(img, tf.uint8)
+#        img = tf.squeeze(img, -1)
+#        #plt.imshow(img, cmap="gray")
+#        #plt.show()
+#        img = img.numpy()
+#        a = np.reshape(img, [513*513, ])
+#        print(np.max(a))
+#        img = np.array(img, dtype=np.int32) # voidŬ?????? ???? 12 ???? Ȯ???غ?????
+#        #img = np.where(img == 0, 255, img)
+
+#        b = np.bincount(np.reshape(img, [img.shape[0]*img.shape[1],]))
+#        b_buf.append(len(b))
+#        total_classes = len(b)  # ???? 124?? ???? ???? Ŭ??????
+
+#        #miou = MIOU(predict=img, label=img, total_classes=total_classes, shape=[img.shape[0]*img.shape[1],])
+#        miou_ = Measurement(predict=img,
+#                            label=img, 
+#                            shape=[513*513, ], 
+#                            total_classes=12).MIOU()
+#        print(miou_)
+
+#    print(np.max(b_buf))

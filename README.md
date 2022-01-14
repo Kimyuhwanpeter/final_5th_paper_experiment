@@ -43,3 +43,6 @@
 * Ablation 3 (change decoder)
 ![image](https://user-images.githubusercontent.com/31001511/148506611-c5db5d8f-08e0-4034-b208-63a14d9b34c9.png)
 
+* Ablation 4 (change attention)
+![image](https://user-images.githubusercontent.com/31001511/149455253-d84d516b-b786-44ce-ade3-b102d2bac2cc.png)
+

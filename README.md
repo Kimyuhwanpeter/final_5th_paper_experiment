@@ -27,22 +27,22 @@
 
 
 * 비교실험 결과
-![image](https://user-images.githubusercontent.com/31001511/147740207-1f01ce54-8b11-41fb-98a3-2da4cb34c8b9.png)
+![image](https://user-images.githubusercontent.com/31001511/149605282-6315a407-c986-4608-8376-5ced1e5f6087.png)
 <br/>
 
 * Ablation 1
-![image](https://user-images.githubusercontent.com/31001511/147740255-fe4802fd-32af-4574-b77c-16428172f7e7.png)
+![image](https://user-images.githubusercontent.com/31001511/149605292-d1e3e0bb-ddf5-4843-8042-dc0aa1c35d44.png)
 <br/>
 
 * Ablation 2
-![image](https://user-images.githubusercontent.com/31001511/147740289-0893d8f2-ed13-458f-9060-ba5727d2d031.png)
+![image](https://user-images.githubusercontent.com/31001511/149605296-b7e6fb6a-2dfa-4b17-a210-d0c2681e6632.png)
 
 * Ablation 2 vs related study
 ![image](https://user-images.githubusercontent.com/31001511/147740354-936cece1-bff5-4d67-bb4f-4f176ed6ddef.png)
 
 * Ablation 3 (change decoder)
-![image](https://user-images.githubusercontent.com/31001511/148506611-c5db5d8f-08e0-4034-b208-63a14d9b34c9.png)
+![image](https://user-images.githubusercontent.com/31001511/149605299-471f18e0-0019-4a3b-b8ac-bc3eeed0ed4f.png)
 
 * Ablation 4 (change attention)
-![image](https://user-images.githubusercontent.com/31001511/149455253-d84d516b-b786-44ce-ade3-b102d2bac2cc.png)
+![image](https://user-images.githubusercontent.com/31001511/149605307-abb48a75-2e9d-482b-92f4-19daf4caf810.png)
 
